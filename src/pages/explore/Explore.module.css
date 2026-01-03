@@ -49,6 +49,13 @@
   background-position: center;
   display: flex;
   flex-direction: column;
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.TourCard:active {
+  cursor: grabbing;
 }
 
 .CardOverlay {
@@ -279,6 +286,33 @@
   font-size: 14px;
   min-width: 60px;
   text-align: center;
+}
+
+.SwipeHint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  opacity: 0.6;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.SwipeArrow {
+  color: white;
+  font-size: 18px;
+}
+
+.SwipeText {
+  color: white;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .SwipeIndicator {

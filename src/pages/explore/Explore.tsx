@@ -1,6 +1,6 @@
-import { createSignal, createResource, type Component, For, Show, onCleanup } from "solid-js";
+import { createSignal, createResource, type Component, For, Show } from "solid-js";
 import { A } from "@solidjs/router";
-import { FiMapPin, FiClock, FiNavigation, FiVolume2, FiChevronRight, FiStar, FiUser, FiPackage, FiCompass, FiChevronLeft } from "solid-icons/fi";
+import { FiMapPin, FiClock, FiNavigation, FiVolume2, FiChevronRight, FiStar, FiUser, FiPackage, FiCompass } from "solid-icons/fi";
 
 import { useDB } from "../../db";
 import { type StopModel } from "../../data";
@@ -24,6 +24,9 @@ interface TourCard {
 export const Explore: Component = () => {
   const db = useDB();
   const [currentIndex, setCurrentIndex] = createSignal(0);
+  const [dragOffset, setDragOffset] = createSignal(0);
+  const [isDragging, setIsDragging] = createSignal(false);
+  const [isAnimating, setIsAnimating] = createSignal(false);
   
   const [tours] = createResource(async () => {
     const projects = await db.listProjects();
@@ -72,48 +75,86 @@ export const Explore: Component = () => {
     return tourCards;
   });
 
-  const [touchStart, setTouchStart] = createSignal<number | null>(null);
-  const [touchEnd, setTouchEnd] = createSignal<number | null>(null);
-  const minSwipeDistance = 50;
+  let touchStartX = 0;
+  let touchStartY = 0;
+  const swipeThreshold = 80;
 
   const handleTouchStart = (e: TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    if (isAnimating()) return;
+    touchStartX = e.targetTouches[0].clientX;
+    touchStartY = e.targetTouches[0].clientY;
+    setIsDragging(true);
   };
 
   const handleTouchMove = (e: TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    if (!isDragging() || isAnimating()) return;
+    const currentX = e.targetTouches[0].clientX;
+    const currentY = e.targetTouches[0].clientY;
+    const deltaX = currentX - touchStartX;
+    const deltaY = Math.abs(currentY - touchStartY);
+    
+    if (Math.abs(deltaX) > deltaY) {
+      e.preventDefault();
+      setDragOffset(deltaX);
+    }
   };
 
   const handleTouchEnd = () => {
-    const start = touchStart();
-    const end = touchEnd();
-    if (!start || !end) return;
+    if (!isDragging() || isAnimating()) return;
+    setIsDragging(false);
     
-    const distance = start - end;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-    
+    const offset = dragOffset();
     const tourList = tours();
-    if (!tourList || tourList.length === 0) return;
-    
-    if (isLeftSwipe && currentIndex() < tourList.length - 1) {
-      setCurrentIndex(i => i + 1);
-    } else if (isRightSwipe && currentIndex() > 0) {
-      setCurrentIndex(i => i - 1);
+    if (!tourList || tourList.length === 0) {
+      setDragOffset(0);
+      return;
+    }
+
+    if (offset < -swipeThreshold && currentIndex() < tourList.length - 1) {
+      animateSwipe("left");
+    } else if (offset > swipeThreshold && currentIndex() > 0) {
+      animateSwipe("right");
+    } else {
+      setDragOffset(0);
     }
   };
 
-  const goNext = () => {
-    const tourList = tours();
-    if (tourList && currentIndex() < tourList.length - 1) {
-      setCurrentIndex(i => i + 1);
-    }
+  const animateSwipe = (direction: "left" | "right") => {
+    setIsAnimating(true);
+    const targetOffset = direction === "left" ? -window.innerWidth : window.innerWidth;
+    setDragOffset(targetOffset);
+    
+    setTimeout(() => {
+      if (direction === "left") {
+        setCurrentIndex(i => i + 1);
+      } else {
+        setCurrentIndex(i => i - 1);
+      }
+      setDragOffset(0);
+      setIsAnimating(false);
+    }, 250);
   };
 
-  const goPrev = () => {
-    if (currentIndex() > 0) {
-      setCurrentIndex(i => i - 1);
+  const handleMouseDown = (e: MouseEvent) => {
+    if (isAnimating()) return;
+    touchStartX = e.clientX;
+    touchStartY = e.clientY;
+    setIsDragging(true);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging() || isAnimating()) return;
+    const deltaX = e.clientX - touchStartX;
+    setDragOffset(deltaX);
+  };
+
+  const handleMouseUp = () => {
+    handleTouchEnd();
+  };
+
+  const handleMouseLeave = () => {
+    if (isDragging()) {
+      handleTouchEnd();
     }
   };
 
@@ -121,6 +162,19 @@ export const Explore: Component = () => {
     const tourList = tours();
     if (!tourList || tourList.length === 0) return null;
     return tourList[currentIndex()];
+  };
+
+  const getCardStyle = () => {
+    const offset = dragOffset();
+    const rotation = offset * 0.02;
+    const scale = 1 - Math.abs(offset) * 0.0002;
+    const opacity = 1 - Math.abs(offset) * 0.001;
+    
+    return {
+      transform: `translateX(${offset}px) rotate(${rotation}deg) scale(${Math.max(0.95, scale)})`,
+      opacity: Math.max(0.7, opacity),
+      transition: isDragging() ? "none" : "transform 0.25s ease-out, opacity 0.25s ease-out",
+    };
   };
 
   return (
@@ -145,10 +199,17 @@ export const Explore: Component = () => {
         {tour => (
           <div 
             class={styles.TourCard}
-            style={{ "background-image": tour().imageUrl ? `url(${tour().imageUrl})` : "linear-gradient(135deg, #2d5a27 0%, #1a3518 100%)" }}
+            style={{ 
+              "background-image": tour().imageUrl ? `url(${tour().imageUrl})` : "linear-gradient(135deg, #2d5a27 0%, #1a3518 100%)",
+              ...getCardStyle()
+            }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
           >
             <div class={styles.CardOverlay}>
               <header class={styles.Header}>
@@ -160,6 +221,14 @@ export const Explore: Component = () => {
                   <FiMapPin />
                 </button>
               </header>
+
+              <Show when={(tours()?.length || 0) > 1}>
+                <div class={styles.SwipeHint}>
+                  <span class={styles.SwipeArrow}>&#8592;</span>
+                  <span class={styles.SwipeText}>Swipe to explore</span>
+                  <span class={styles.SwipeArrow}>&#8594;</span>
+                </div>
+              </Show>
 
               <div class={styles.CardContent}>
                 <div class={styles.LocationLine}>
@@ -201,32 +270,22 @@ export const Explore: Component = () => {
                 </A>
 
                 <Show when={(tours()?.length || 0) > 1}>
-                  <div class={styles.SwipeControls}>
-                    <button 
-                      class={styles.SwipeButton} 
-                      onClick={goPrev}
-                      disabled={currentIndex() === 0}
-                    >
-                      <FiChevronLeft />
-                    </button>
-                    <span class={styles.SwipeCount}>{currentIndex() + 1} / {tours()?.length}</span>
-                    <button 
-                      class={styles.SwipeButton} 
-                      onClick={goNext}
-                      disabled={currentIndex() === (tours()?.length || 1) - 1}
-                    >
-                      <FiChevronRight />
-                    </button>
-                  </div>
-                </Show>
-
-                <Show when={(tours()?.length || 0) > 1}>
                   <div class={styles.SwipeIndicator}>
                     <For each={tours()}>
-                      {(_, i) => (
+                      {(_, index) => (
                         <span 
-                          class={`${styles.Dot} ${i() === currentIndex() ? styles.DotActive : ""}`}
-                          onClick={() => setCurrentIndex(i())}
+                          class={`${styles.Dot} ${index() === currentIndex() ? styles.DotActive : ""}`}
+                          onClick={() => {
+                            if (!isAnimating()) {
+                              const direction = index() > currentIndex() ? "left" : "right";
+                              const diff = Math.abs(index() - currentIndex());
+                              if (diff === 1) {
+                                animateSwipe(direction);
+                              } else {
+                                setCurrentIndex(index());
+                              }
+                            }
+                          }}
                         />
                       )}
                     </For>
