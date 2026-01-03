@@ -133,7 +133,7 @@ class _FakeGpsOverlayState extends State<_FakeGpsOverlay> {
   }
 
   Offset? latLngToScreenPoint(LatLng latLng) {
-    return controller.camera.getOffsetFromLatLng(latLng);
+    return controller.camera.getOffsetFromOrigin(latLng);
   }
 
   @override
