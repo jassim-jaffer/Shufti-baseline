@@ -6,6 +6,7 @@ import { useDB } from "../../db";
 import { type StopModel } from "../../data";
 import styles from "./Explore.module.css";
 import shuftiLogo from "../../assets/shufti-logo.png";
+import muttrahImage from "../../assets/muttrah-cover.jpg";
 
 interface TourCard {
   id: string;
@@ -36,14 +37,19 @@ export const Explore: Component = () => {
         const estimatedDuration = Math.max(0.5, stopCount * 0.3);
         
         let imageUrl: string | null = null;
-        const firstStopWithImage = stops.find(s => s.gallery && s.gallery.length > 0);
-        if (firstStopWithImage && firstStopWithImage.gallery[0]) {
-          const imageHash = firstStopWithImage.gallery[0];
-          const asset = project.assets[imageHash];
-          if (asset) {
-            const blob = await db.loadAsset(imageHash);
-            if (blob) {
-              imageUrl = URL.createObjectURL(blob);
+        
+        if (tour.title.toLowerCase().includes("muttrah")) {
+          imageUrl = muttrahImage;
+        } else {
+          const firstStopWithImage = stops.find(s => s.gallery && s.gallery.length > 0);
+          if (firstStopWithImage && firstStopWithImage.gallery[0]) {
+            const imageHash = firstStopWithImage.gallery[0];
+            const asset = project.assets[imageHash];
+            if (asset) {
+              const blob = await db.loadAsset(imageHash);
+              if (blob) {
+                imageUrl = URL.createObjectURL(blob);
+              }
             }
           }
         }
