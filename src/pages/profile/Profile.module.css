@@ -1,0 +1,138 @@
+.Container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #fafafa;
+}
+
+.Content {
+  flex: 1;
+  padding: 40px 20px 100px;
+  max-width: 500px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.Header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.Avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7cb342 0%, #558b2f 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 16px;
+}
+
+.Header h1 {
+  color: #1a1a1a;
+  font-size: 24px;
+  margin: 0 0 8px 0;
+}
+
+.Header p {
+  color: #666;
+  margin: 0;
+  font-size: 14px;
+}
+
+.MenuSection {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.MenuItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  color: #1a1a1a;
+  text-decoration: none;
+  text-align: left;
+}
+
+.MenuItem:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.MenuItem svg {
+  font-size: 20px;
+  color: #7cb342;
+}
+
+.MenuItem span {
+  flex: 1;
+}
+
+.Chevron {
+  color: #ccc !important;
+  font-size: 16px !important;
+}
+
+.LogoutButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  border: none;
+  background: white;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #e53935;
+  margin-top: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.LogoutButton svg {
+  font-size: 20px;
+}
+
+.BottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 20px 24px;
+  background: white;
+  border-top: 1px solid #eee;
+}
+
+.NavItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: #999;
+  font-size: 12px;
+  padding: 8px 16px;
+  position: relative;
+}
+
+.NavItem svg {
+  font-size: 22px;
+}
+
+.NavItemActive {
+  color: #7cb342;
+}

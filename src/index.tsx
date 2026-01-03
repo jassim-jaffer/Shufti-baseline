@@ -6,6 +6,9 @@ import { Toaster } from "solid-toast";
 
 import "./index.css";
 import { Navbar } from "./Navbar";
+import { Explore } from "./pages/explore/Explore";
+import { Profile } from "./pages/profile/Profile";
+import { Bundles } from "./pages/bundles/Bundles";
 import { Home } from "./pages/home/Home";
 import { ProjectEditor } from "./pages/project/ProjectEditor";
 import { ProjectAssetsEditor } from "./pages/project/ProjectAssetsEditor";
@@ -23,11 +26,20 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
 
 const Blank: Component = () => <></>;
 
+const ExploreLayout: Component<{ children?: any }> = (props) => {
+  return <>{props.children}</>;
+};
+
 render(
   () => (
     <>
       <HashRouter>
-        <Route path="/" component={Navbar}>
+        <Route path="/" component={ExploreLayout}>
+          <Route path="/" component={Explore} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/bundles" component={Bundles} />
+        </Route>
+        <Route path="/admin" component={Navbar}>
           <Route path="/" component={Home} />
           <Route path="/projects/:pid" component={ProjectEditor}>
             <Route path="/" component={Blank} />
