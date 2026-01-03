@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "Shufti",
+    "slug": "shufti-player",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a2e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shufti.player",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Shufti uses your location to trigger audio at tour stops as you walk.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Shufti uses your location in the background to trigger audio at tour stops even when the app is minimized.",
+        "UIBackgroundModes": ["audio", "location"]
+      }
+    },
+    "android": {
+      "package": "com.shufti.player",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a2e"
+      },
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Shufti uses your location to trigger audio at tour stops."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    }
+  }
+}

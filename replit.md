@@ -2,10 +2,11 @@
 
 ## Overview
 
-Shufti is a GPS-guided audio tour platform. It consists of two main components:
+Shufti is a GPS-guided audio tour platform focused on Oman. It consists of three main components:
 
 1. **Shufti Builder** (Web Editor) - A SolidJS-based single-page application for creating and managing tour projects, including tours, waypoints, points of interest, and associated media assets (images, audio)
-2. **Shufti App** (Mobile Player) - A Flutter-based mobile application (in the `app/` directory) that serves as the GPS-guided tour player for Android and iOS
+2. **Shufti Player** (Mobile App) - An Expo/React Native mobile application (in the `player/` directory) that serves as the GPS-guided tour player for Android and iOS. Can be built via Expo EAS cloud builds - no local Xcode required.
+3. **Legacy Flutter App** - The original Flutter-based mobile app (in the `app/` directory) - kept for reference but replaced by the Expo player
 
 The web editor allows users to create tour projects with interactive maps, manage routes with stops and control points, upload media assets, and export project bundles as zip files that can be hosted on web servers for consumption by the mobile app.
 
