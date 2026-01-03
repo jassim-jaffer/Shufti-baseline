@@ -84,7 +84,7 @@ eas submit --platform android
 
 ## How It Works
 
-1. **Create tours** using the Shufti Builder (web editor)
+1. **Create tours** using the Shufti Admin Panel (web or app)
 2. **Export** the tour bundle as a zip file
 3. **Host** the extracted bundle on any web server
 4. **Add the URL** in the Shufti Player app
