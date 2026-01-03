@@ -16,8 +16,9 @@ export const Home: Component = () => {
   // Automatic download of projects
   onMount(async () => {
     const url = new URL(window.location.href);
-    const toDownload = url.searchParams.get("tourforge-load-project");
+    const toDownload = url.searchParams.get("shufti-load-project") || url.searchParams.get("tourforge-load-project");
     if (toDownload != null) {
+      url.searchParams.delete("shufti-load-project");
       url.searchParams.delete("tourforge-load-project");
       window.history.replaceState({}, "", url);
       await doLoadFromUrl(toDownload);
@@ -141,15 +142,15 @@ export const Home: Component = () => {
     <div class={styles.Wrapper}>
       <div class={styles.Home}>
         <div class={styles.Welcome}>
-          <header>Welcome to TourForge!</header>
+          <header>Welcome to Shufti Builder!</header>
           <p>
-            TourForge is an application for building tours that are compatible with TourForge Guide.
+            Shufti Builder is your tool for creating GPS-guided audio tours compatible with the Shufti app.
             It works entirely within your web browser. A status message is always present in the top
             bar indicating how persistently your work is saved; this message is necessary because
             the web platform limits our ability to guarantee persistent storage at all times.
           </p>
           <p>
-            To the right is the list of tours (if any) that are currently loaded into TourForge; click Edit <FiEdit /> to
+            To the right is the list of tours (if any) that are currently loaded into Shufti Builder; click Edit <FiEdit /> to
             begin editing. Alternatively, start a new project with <strong>Create Project</strong>, or
             use <strong>Load Project</strong> to load a project zip archive that was previously saved from the
             project editor screen. <strong>Load Project From URL</strong> downloads the latest content

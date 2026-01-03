@@ -35,7 +35,7 @@ export const exportProjectBundle = async (db: DB, project: string, options: { in
   const zipUrl = URL.createObjectURL(zipBlob);
   const a = document.createElement("a");
   a.href = zipUrl;
-  a.download = "TourForge-" + projectContent.title.replaceAll(" ", "-") + "-" + dateString + ".zip";
+  a.download = "Shufti-" + projectContent.title.replaceAll(" ", "-") + "-" + dateString + ".zip";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

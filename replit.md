@@ -1,11 +1,11 @@
-# TourForge
+# Shufti
 
 ## Overview
 
-TourForge is a GPS-guided tour creation and editing platform. It consists of two main components:
+Shufti is a GPS-guided audio tour platform. It consists of two main components:
 
-1. **Web Editor** - A SolidJS-based single-page application for creating and managing tour projects, including tours, waypoints, points of interest, and associated media assets (images, audio)
-2. **Mobile App** - A Flutter-based mobile application (in the `app/` directory) that serves as a rebrandable tour guide app for Android and iOS
+1. **Shufti Builder** (Web Editor) - A SolidJS-based single-page application for creating and managing tour projects, including tours, waypoints, points of interest, and associated media assets (images, audio)
+2. **Shufti App** (Mobile Player) - A Flutter-based mobile application (in the `app/` directory) that serves as the GPS-guided tour player for Android and iOS
 
 The web editor allows users to create tour projects with interactive maps, manage routes with stops and control points, upload media assets, and export project bundles as zip files that can be hosted on web servers for consumption by the mobile app.
 
@@ -54,7 +54,7 @@ Preferred communication style: Simple, everyday language.
 ### Project Export/Import
 
 - **Export Format**: Zip bundles containing:
-  - `tourforge.json` - Project data
+  - `shufti.json` - Project data
   - `index.html` / `index.js` - Self-contained loader for web hosting
   - Asset files named by their SHA-256 hash
 - **Import**: Supports loading from zip files or URLs with cross-origin messaging for asset retrieval

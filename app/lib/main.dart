@@ -8,10 +8,10 @@ Future<void> main() async {
 
   await runTourForge(
     config: TourForgeConfig(
-      appName: "TourForge Baseline App",
+      appName: "Shufti",
       appDesc:
-          '''TourForge Baseline App is the starter app for the TourForge Baseline library.''',
-      // TODO: Replace with Shufti tour content URL
+          '''Shufti is your GPS-guided audio tour companion. Discover amazing places with immersive audio experiences.''',
+      // TODO: Replace with your tour content URL
       baseUrl: "https://tourforge.github.io/config/florence-navigator",
       baseUrlIsIndirect: true,
       lightThemeData: lightThemeData,

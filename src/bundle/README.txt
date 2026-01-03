@@ -1,13 +1,13 @@
-This zip file contains the data for a tour made with TourForge. In order for a
-mobile tour guide app to use the data, it has to be uploaded to a web server.
+This zip file contains the data for a tour made with Shufti Builder. In order for
+the Shufti mobile app to use the data, it has to be uploaded to a web server.
 
 Simply upload all the files in this zip to a server, such that they are all
 available for download. This includes the index.html and index.js files, which
-are there so that users of TourForge can visit the URL where the tour data is
-stored and have the tour data be automatically downloaded by TourForge.
+are there so that users of Shufti Builder can visit the URL where the tour data is
+stored and have the tour data be automatically downloaded by Shufti Builder.
 
 For example, the list of files in this archive look something like this:
-- tourforge.json
+- shufti.json
 - index.html
 - index.js
 - dbd57c2b1d5aa3d84bdc7eaa7cd57dd7c66bd6cccd851394b2c4cf96570239ff

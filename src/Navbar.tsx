@@ -39,7 +39,7 @@ export const Navbar: Component<{ children?: JSX.Element }> = (props) => {
   return (
     <div class={styles.Wrapper}>
       <nav class={styles.Nav}>
-        <A class={styles.NavButton} classList={{ [styles.NavHeader]: true }} href="/">TourForge</A>
+        <A class={styles.NavButton} classList={{ [styles.NavHeader]: true }} href="/">Shufti Builder</A>
         <div style="flex: 1"></div>
         <Show when={isPersistent() === true}>
           <div>Changes are only saved locally in your browser.</div>
