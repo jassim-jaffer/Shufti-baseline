@@ -1,0 +1,81 @@
+.Wrapper {
+  margin: auto 0;
+}
+
+.Home {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 32px;
+  justify-content: center;
+  align-items: center;
+  gap: 50px 100px;
+}
+
+.Welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  max-width: 700px;
+  font-size: 18px;
+  gap: 16px;
+}
+
+.Welcome>header {
+  font-size: 48px;
+  color: rgb(95, 95, 95);
+  font-weight: bold;
+  text-align: center;
+  margin: 0;
+}
+
+.Welcome>p {
+  line-height: 1.5;
+  margin: 0;
+}
+
+.CreateLoadButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.Projects {
+  max-width: 500px;
+  min-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.ProjectCard {
+  display: flex;
+  background-color: rgb(203, 233, 254);
+  color: rgb(11, 58, 91);
+  border-radius: 12px;
+  padding: 0 8px;
+  height: 48px;
+}
+
+.ProjectName {
+  flex: 1;
+
+  padding: 12px 8px;
+}
+
+.ProjectButton {
+  all: unset;
+  cursor: pointer;
+  user-select: none;
+
+  padding: 12px 8px;
+}
+
+.ProjectsButtons {
+  width: 350px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}

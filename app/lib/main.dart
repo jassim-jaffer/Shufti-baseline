@@ -11,6 +11,7 @@ Future<void> main() async {
       appName: "TourForge Baseline App",
       appDesc:
           '''TourForge Baseline App is the starter app for the TourForge Baseline library.''',
+      // TODO: Replace with Shufti tour content URL
       baseUrl: "https://tourforge.github.io/config/florence-navigator",
       baseUrlIsIndirect: true,
       lightThemeData: lightThemeData,

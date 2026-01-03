@@ -1,0 +1,54 @@
+.Wrapper {
+  height: 100vh;
+  width: 100vw;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.Nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid lightgray;
+}
+
+.NavButton {
+  all: unset;
+  cursor: pointer;
+  user-select: none;
+  font-size: 20px;
+  font-weight: 600;
+  color: rgb(12, 162, 193);
+}
+
+.NavHeader {
+  font-size: 22px;
+  margin-right: 24px;
+  color: transparent;
+  background-image: linear-gradient(90deg, rgb(69, 105, 224) 0%, rgb(12, 162, 193) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.NavButton:hover {
+  text-decoration: underline 2px;
+}
+
+.AdminPanelButton {
+  color: rgb(187, 187, 187);
+  font-size: 18px;
+  margin-right: 20px;
+}
+
+.LogOutButton {
+  color: rgb(246, 33, 101);
+}
+
+.Main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
