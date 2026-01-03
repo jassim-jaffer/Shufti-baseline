@@ -3,6 +3,7 @@ import { type Component, Show, type JSX, createResource, onCleanup } from "solid
 
 import styles from "./Navbar.module.css";
 import { useDB } from "./db";
+import shuftiLogo from "./assets/shufti-logo.png";
 
 export const Navbar: Component<{ children?: JSX.Element }> = (props) => {
   const db = useDB();
@@ -39,7 +40,10 @@ export const Navbar: Component<{ children?: JSX.Element }> = (props) => {
   return (
     <div class={styles.Wrapper}>
       <nav class={styles.Nav}>
-        <A class={styles.NavButton} classList={{ [styles.NavHeader]: true }} href="/">Shufti Builder</A>
+        <A class={styles.NavButton} classList={{ [styles.NavHeader]: true }} href="/">
+          <img src={shuftiLogo} alt="Shufti" style={{ height: "32px", "margin-right": "8px" }} />
+          Builder
+        </A>
         <div style="flex: 1"></div>
         <Show when={isPersistent() === true}>
           <div>Changes are only saved locally in your browser.</div>

@@ -8,6 +8,7 @@ import { type DbProject, useDB } from "../../db";
 import { ImportError, type ReplacementAction, importProjectBundle, importProjectUrl } from "../../import";
 
 import styles from "./Home.module.css";
+import shuftiLogo from "../../assets/shufti-logo.png";
 
 export const Home: Component = () => {
   const db = useDB();
@@ -142,6 +143,7 @@ export const Home: Component = () => {
     <div class={styles.Wrapper}>
       <div class={styles.Home}>
         <div class={styles.Welcome}>
+          <img src={shuftiLogo} alt="Shufti" style={{ width: "180px", "margin-bottom": "16px" }} />
           <header>Welcome to Shufti Builder!</header>
           <p>
             Shufti Builder is your tool for creating GPS-guided audio tours compatible with the Shufti app.
