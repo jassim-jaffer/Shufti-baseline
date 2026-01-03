@@ -30,7 +30,8 @@ export const Explore: Component = () => {
     
     for (const project of projects) {
       for (const tour of project.tours) {
-        const stops = tour.route.filter((w): w is StopModel => w.type === "stop");
+        const route = tour.route || [];
+        const stops = route.filter((w): w is StopModel => w.type === "stop");
         const stopCount = stops.length;
         const estimatedDuration = Math.max(0.5, stopCount * 0.3);
         
