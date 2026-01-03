@@ -1,6 +1,7 @@
-import { FiArrowDown, FiArrowLeft, FiArrowUp, FiEdit, FiTrash } from "solid-icons/fi";
+import { FiArrowDown, FiArrowLeft, FiArrowUp, FiEdit, FiTrash, FiUpload } from "solid-icons/fi";
 import { For, type JSX, type Setter, Show, createSignal, type Component } from "solid-js";
 import { v4 as uuidv4 } from "uuid";
+import toast from "solid-toast";
 import { useNavigate } from "@solidjs/router";
 
 import { Field } from "../../components/Field";
@@ -248,6 +249,81 @@ const MainPanel: Component<{ show: boolean, setPanel: Setter<Panel> }> = (props)
   );
 };
 
+const parseCSV = (text: string): Array<Record<string, string>> => {
+  const rows: Array<Record<string, string>> = [];
+  const chars = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  
+  let i = 0;
+  const records: string[][] = [];
+  
+  while (i < chars.length) {
+    const record: string[] = [];
+    
+    while (i < chars.length) {
+      let value = '';
+      
+      if (chars[i] === '"') {
+        i++;
+        while (i < chars.length) {
+          if (chars[i] === '"') {
+            if (chars[i + 1] === '"') {
+              value += '"';
+              i += 2;
+            } else {
+              i++;
+              break;
+            }
+          } else {
+            value += chars[i];
+            i++;
+          }
+        }
+      } else {
+        while (i < chars.length && chars[i] !== ',' && chars[i] !== '\n') {
+          value += chars[i];
+          i++;
+        }
+        value = value.trim();
+      }
+      
+      record.push(value);
+      
+      if (i >= chars.length || chars[i] === '\n') {
+        i++;
+        break;
+      }
+      if (chars[i] === ',') {
+        i++;
+      }
+    }
+    
+    if (record.length > 0 && record.some(v => v.length > 0)) {
+      records.push(record);
+    }
+  }
+  
+  if (records.length < 2) return [];
+  
+  const headers = records[0];
+  
+  for (let r = 1; r < records.length; r++) {
+    const row: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      row[header] = records[r][index] || '';
+    });
+    rows.push(row);
+  }
+  
+  return rows;
+};
+
+const isValidCoordinate = (lat: number, lng: number): boolean => {
+  return !isNaN(lat) && !isNaN(lng) && 
+         isFinite(lat) && isFinite(lng) &&
+         lat >= -90 && lat <= 90 && 
+         lng >= -180 && lng <= 180;
+};
+
 const RouteList: Component<{
   route: () => Array<StopModel | ControlPointModel>,
   onChange: (newRoute: Array<StopModel | ControlPointModel>) => void,
@@ -255,6 +331,78 @@ const RouteList: Component<{
 }> = (props) => {
   const map = useMapController();
   const [tour] = useTour();
+  let fileInputRef: HTMLInputElement | undefined;
+
+  const handleCSVImport = (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const rows = parseCSV(text);
+        
+        if (rows.length === 0) {
+          toast.error('No valid data found in CSV');
+          return;
+        }
+
+        const validRows = rows
+          .filter(row => {
+            const lat = parseFloat(row['Latitude']);
+            const lng = parseFloat(row['Longitude']);
+            return isValidCoordinate(lat, lng);
+          })
+          .sort((a, b) => parseInt(a['Order'] || '0') - parseInt(b['Order'] || '0'));
+
+        const skippedCount = rows.length - validRows.length;
+
+        const newStops: StopModel[] = validRows.map(row => ({
+          type: "stop" as const,
+          id: uuidv4(),
+          title: row['Name'] || 'Untitled',
+          desc: row['Description'] || '',
+          lat: parseFloat(row['Latitude']),
+          lng: parseFloat(row['Longitude']),
+          trigger_radius: 30.0,
+          control: tour()?.type === "walking" ? "path" as const : "route" as const,
+          gallery: [],
+          narration: undefined,
+          transcript: undefined,
+          links: {},
+        }));
+
+        if (newStops.length === 0) {
+          toast.error('No stops with valid coordinates found');
+          return;
+        }
+        
+        if (skippedCount > 0) {
+          toast(`Skipped ${skippedCount} rows with invalid coordinates`);
+        }
+
+        props.onChange([...props.route(), ...newStops]);
+        
+        const audioFiles = rows
+          .filter(row => row['Audio File Name']?.trim())
+          .map(row => row['Audio File Name'].trim());
+        
+        if (audioFiles.length > 0) {
+          toast.success(`Imported ${newStops.length} stops. Note: ${audioFiles.length} audio files referenced - upload them separately in each stop's settings.`);
+        } else {
+          toast.success(`Imported ${newStops.length} stops successfully!`);
+        }
+      } catch (err) {
+        console.error('CSV import error:', err);
+        toast.error('Failed to parse CSV file');
+      }
+      
+      input.value = '';
+    };
+    reader.readAsText(file);
+  };
 
   const addStop = () => {
     const newWaypoint: StopModel = {
@@ -339,6 +487,16 @@ const RouteList: Component<{
         </button>
         <button class="primary" onClick={addControlPoint}>
           Add Control Point
+        </button>
+        <input
+          type="file"
+          accept=".csv"
+          ref={fileInputRef}
+          style={{ display: "none" }}
+          onChange={handleCSVImport}
+        />
+        <button class="secondary" onClick={() => fileInputRef?.click()}>
+          <FiUpload style={{ "margin-right": "4px" }} /> Import CSV
         </button>
       </div>
     </div>
