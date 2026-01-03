@@ -1,5 +1,5 @@
-name: tourforge_baseline_app
-description: Demonstration and template for TourForge Baseline. More than just an example, which is why it is in app/ and not example/ in the repository.
+name: geo_guide_app
+description: GPS-guided audio tour player.
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
