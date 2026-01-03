@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -36,7 +35,7 @@ class _WaypointDetailsState extends State<WaypointDetails>
                 title: widget.waypoint.title,
                 action: ElevatedButton(
                   onPressed: () {
-                    if (Platform.isIOS) {
+                    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
                       launchUrl(
                         Uri.parse(
                             "https://maps.apple.com/?daddr=${widget.waypoint.lat},${widget.waypoint.lng}"),

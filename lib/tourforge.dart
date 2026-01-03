@@ -1,7 +1,6 @@
 library tourforge_baseline;
 
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:audio_session/audio_session.dart';
@@ -9,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -30,7 +30,7 @@ Future<void> runTourForge({
   setTourForgeConfig(config);
 
   WidgetsFlutterBinding.ensureInitialized();
-  if (Platform.isAndroid) {
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
     FlutterDisplayMode.setHighRefreshRate();
   }
 
@@ -61,18 +61,15 @@ Future<void> runTourForge({
 /// request fails.
 Future<String> _fetchBaseUrl(String from) async {
   for (var i = 0;; i++) {
-    var client = HttpClient();
     try {
-      var req = await client.getUrl(Uri.parse(from));
-      var resp = await req.close();
+      var resp = await http.get(Uri.parse(from));
       if (resp.statusCode != 200) {
         if (kDebugMode) {
-          print("Failed to fetch base URL from ${req.uri}: HTTP ${resp.statusCode} response");
+          print("Failed to fetch base URL from $from: HTTP ${resp.statusCode} response");
         }
         throw Exception("Failed to fetch base URL from indirect source");
       }
-      var jsonText = await resp.transform(utf8.decoder).join();
-      var json = jsonDecode(jsonText);
+      var json = jsonDecode(resp.body);
       return json["baseUrl"];
     } catch (e) {
       if (kDebugMode) {
@@ -82,8 +79,6 @@ Future<String> _fetchBaseUrl(String from) async {
       // Really crappy exponential backoff with no randomness
       // Unlike in download_manager.dart with a better impl
       await Future.delayed(Duration(milliseconds: 500 * pow(2, i).toInt()));
-    } finally {
-      client.close();
     }
   }
 }

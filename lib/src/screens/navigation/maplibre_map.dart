@@ -273,14 +273,14 @@ class _MapLibreMapState extends State<MapLibreMap> {
           return Stack(
             fit: StackFit.passthrough,
             children: [
-              if (Platform.isAndroid)
+              if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
                 AndroidView(
                   viewType: viewType,
                   layoutDirection: TextDirection.ltr,
                   creationParams: creationParams,
                   creationParamsCodec: const StandardMessageCodec(),
                 ),
-              if (Platform.isIOS)
+              if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS)
                 UiKitView(
                   viewType: viewType,
                   layoutDirection: TextDirection.ltr,
