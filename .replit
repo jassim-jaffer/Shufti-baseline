@@ -45,5 +45,4 @@ mode = "parallel"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
-waitForPort = 5000
+args = "npx vite --host 0.0.0.0 --port 5000"
