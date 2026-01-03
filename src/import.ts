@@ -17,15 +17,19 @@ export const importProjectBundle = async (db: DB, file: File, chooseReplacement?
   } catch (e) {
     throw new ImportError("The chosen file does not appear to be a valid zip file.", { cause: e });
   }
-  const projectJsonFile = zip.file("tourforge.json");
+  // Support both shufti.json (new) and tourforge.json (legacy) for backwards compatibility
+  let projectJsonFile = zip.file("shufti.json");
   if (projectJsonFile == null) {
-    throw new ImportError("tourforge.json is missing.");
+    projectJsonFile = zip.file("tourforge.json");
+  }
+  if (projectJsonFile == null) {
+    throw new ImportError("Project data file is missing.");
   }
   let projectJsonText: string;
   try {
     projectJsonText = await projectJsonFile.async("text");
   } catch (e) {
-    throw new ImportError("Failed to load tourforge.json as text.");
+    throw new ImportError("Failed to load project data as text.");
   }
 
   return await importProject(
@@ -66,7 +70,14 @@ export const importProjectUrl = async (db: DB, url: URL, chooseReplacement?: (op
 
   const result = await importProject(
     db,
-    async () => JSON.parse(await (await loadViaIFrame(url.origin, iframe, "tourforge.json")).text()),
+    async () => {
+      // Try shufti.json first, fall back to tourforge.json for backwards compatibility
+      try {
+        return JSON.parse(await (await loadViaIFrame(url.origin, iframe, "shufti.json")).text());
+      } catch {
+        return JSON.parse(await (await loadViaIFrame(url.origin, iframe, "tourforge.json")).text());
+      }
+    },
     async (hash) => await loadViaIFrame(url.origin, iframe, hash),
     chooseReplacement,
   );
@@ -158,13 +169,13 @@ const importProject = async (
   try {
     projectJson = await loadProjectJson();
   } catch (e) {
-    throw new ImportError("tourforge.json could not be loaded as JSON.", { cause: e });
+    throw new ImportError("Project data could not be loaded as JSON.", { cause: e });
   }
   let project: ProjectModel;
   try {
     project = ProjectModelSchema.parse(projectJson);
   } catch (e) {
-    throw new ImportError("tourforge.json has an invalid schema.", { cause: e });
+    throw new ImportError("Project data has an invalid schema.", { cause: e });
   }
   const assetBlobs: Record<string, Blob> = {};
   for (const assetInfo of Object.values(project.assets)) {

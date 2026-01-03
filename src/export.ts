@@ -63,7 +63,7 @@ const exportProjectBundleRaw = async (project: ProjectModel, loadAsset: (hash: s
     zip.file("README.txt", readmeTxtContent);
     zip.file("index.html", bundleIndexHtmlContent.replaceAll("%PROJECT_TITLE%", project.title).replaceAll("%INDEX_JS%", "index.js"));
     zip.file("index.js", bundleIndexJsContent);
-    zip.file("tourforge.json", projectContentString);
+    zip.file("shufti.json", projectContentString);
     for (const [assetHash, assetBlob] of Object.entries(assetBlobs)) {
       zip.file(assetHash, assetBlob);
     }

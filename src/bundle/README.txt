@@ -20,7 +20,7 @@ name correspond to the SHA-256 hash of the file.
 The web server needs to serve the data in this zip from some common base URL.
 Continuing with the previous example, your configuration could serve the files
 in a pattern like this:
-- https://your.site.example.org/some/path/to/the/files/tourforge.json
+- https://your.site.example.org/some/path/to/the/files/shufti.json
 - https://your.site.example.org/some/path/to/the/files/index.html
 - https://your.site.example.org/some/path/to/the/files/index.js
 - https://your.site.example.org/some/path/to/the/files/dbd57c2b1d5aa3d84bdc7eaa7cd57dd7c66bd6cccd851394b2c4cf96570239ff

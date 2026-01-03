@@ -6,7 +6,16 @@
 import { ProjectModelSchema } from "../data";
 
 const projectPromise = (async () => {
-  const result = ProjectModelSchema.safeParse(await (await fetch("tourforge.json")).json());
+  // Try shufti.json first, fall back to tourforge.json for backwards compatibility
+  let resp = await fetch("shufti.json");
+  if (!resp.ok) {
+    resp = await fetch("tourforge.json");
+  }
+  if (!resp.ok) {
+    console.error("Failed to load project data");
+    return undefined;
+  }
+  const result = ProjectModelSchema.safeParse(await resp.json());
   if (result.success) {
     return result.data;
   } else {
@@ -39,9 +48,17 @@ window.addEventListener("message", async (ev) => {
       return;
     }
 
-    if (data === "tourforge.json") {
-      console.log("Serving tourforge.json to postMessage sender");
-      source.postMessage({ status: "success", asset: data, data: await fetchAsBlob("tourforge.json") }, options);
+    // Support both shufti.json and tourforge.json requests
+    if (data === "shufti.json" || data === "tourforge.json") {
+      // Try shufti.json first, fall back to tourforge.json
+      let blob: Blob;
+      try {
+        blob = await fetchAsBlob("shufti.json");
+      } catch {
+        blob = await fetchAsBlob("tourforge.json");
+      }
+      console.log("Serving project data to postMessage sender");
+      source.postMessage({ status: "success", asset: data, data: blob }, options);
       return;
     }
 
@@ -68,7 +85,7 @@ window.addEventListener("message", async (ev) => {
 const template = document.querySelector<HTMLTemplateElement>("template#content")!;
 const clone = template.content.cloneNode(true) as HTMLElement;
 const link = clone.querySelector<HTMLAnchorElement>("a.edit-tour-link")!;
-const linkText = "https://tourforge.github.io/builder?tourforge-load-project=" + encodeURIComponent(window.location.href);
+const linkText = window.location.origin + "/?shufti-load-project=" + encodeURIComponent(window.location.href);
 link.href = linkText;
 link.innerText = linkText;
 document.body.appendChild(clone);
