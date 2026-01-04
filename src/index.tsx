@@ -13,6 +13,7 @@ import { Home } from "./pages/home/Home";
 import { ProjectEditor } from "./pages/project/ProjectEditor";
 import { ProjectAssetsEditor } from "./pages/project/ProjectAssetsEditor";
 import { ProjectManager } from "./pages/project/ProjectManager";
+import { TourDetails } from "./pages/tour/TourDetails";
 
 const TourEditor = lazy(async () => await import("./pages/project/TourEditor"));
 
@@ -36,6 +37,7 @@ render(
       <HashRouter>
         <Route path="/" component={ExploreLayout}>
           <Route path="/" component={Explore} />
+          <Route path="/tour/:projectId/:tourId" component={TourDetails} />
           <Route path="/profile" component={Profile} />
           <Route path="/bundles" component={Bundles} />
         </Route>

@@ -265,7 +265,7 @@ export const Explore: Component = () => {
                   </div>
                 </div>
 
-                <A href={`/admin/projects/${tour().projectId}/tours/${tour().id}`} class={styles.ExploreButton}>
+                <A href={`/tour/${tour().projectId}/${tour().id}`} class={styles.ExploreButton}>
                   Explore Tour <FiChevronRight />
                 </A>
 
