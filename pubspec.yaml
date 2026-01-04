@@ -44,7 +44,7 @@ dependencies:
   audio_service: ^0.18.12
   audio_session: ^0.1.21
   image: ^4.0.17
-  wakelock_plus: ^1.1.4
+  wakelock_plus: ^1.4.0
 
 dev_dependencies:
   flutter_test:
