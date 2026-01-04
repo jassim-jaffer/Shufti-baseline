@@ -1,21 +1,37 @@
 import 'package:flutter/material.dart';
-import 'package:tourforge_baseline/tourforge.dart';
+import 'package:flutter/services.dart';
+import 'package:tourforge_baseline/src/screens/shufti/shufti_app.dart';
 
-import '/theme.dart';
-
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await runTourForge(
-    config: TourForgeConfig(
-      appName: "Shufti",
-      appDesc:
-          '''Shufti is your GPS-guided audio tour companion. Discover amazing places with immersive audio experiences.''',
-      // TODO: Replace with your tour content URL
-      baseUrl: "https://tourforge.github.io/config/florence-navigator",
-      baseUrlIsIndirect: true,
-      lightThemeData: lightThemeData,
-      darkThemeData: darkThemeData,
+  
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
     ),
   );
+
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Shufti',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF7CB342),
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: Colors.white,
+      ),
+      home: const ShuftiApp(),
+    );
+  }
 }
