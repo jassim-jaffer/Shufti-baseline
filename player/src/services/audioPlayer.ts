@@ -113,3 +113,13 @@ export async function getAudioStatus(): Promise<AudioState | null> {
     didJustFinish: status.didJustFinish,
   };
 }
+
+export async function getPlaybackPosition(): Promise<number> {
+  if (!currentSound) return 0;
+  
+  const status = await currentSound.getStatusAsync();
+  if (status.isLoaded) {
+    return status.positionMillis;
+  }
+  return 0;
+}

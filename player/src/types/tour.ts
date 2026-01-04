@@ -62,6 +62,21 @@ export interface ProjectModel {
   assets: Record<string, AssetInfo>;
 }
 
+export interface TourPreview {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string;
+  location: string;
+  imageUrl: string | null;
+  stopCount: number;
+  duration: string;
+  tourData: TourModel;
+  assets: Record<string, AssetInfo>;
+  baseUrl: string;
+  isDownloaded: boolean;
+}
+
 export interface DownloadedTour {
   id: string;
   projectId: string;
@@ -72,11 +87,13 @@ export interface DownloadedTour {
   baseUrl: string;
   downloadedAt: string;
   isOffline: boolean;
+  progress?: TourProgress;
 }
 
 export interface TourProgress {
   tourId: string;
   currentStopIndex: number;
+  currentAudioPosition: number;
   visitedStops: string[];
   isPlaying: boolean;
   lastPlayedAt: string;

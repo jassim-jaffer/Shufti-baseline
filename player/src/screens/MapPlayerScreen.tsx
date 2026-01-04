@@ -4,10 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   Alert,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT, Region } from 'react-native-maps';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { DownloadedTour, StopModel, TourProgress } from '../types/tour';
 import {
@@ -21,33 +23,32 @@ import {
   loadAudio,
   playAudio,
   pauseAudio,
+  seekAudio,
   unloadAudio,
   setPlaybackStatusCallback,
   AudioState,
+  getPlaybackPosition,
 } from '../services/audioPlayer';
 import { decodePolyline } from '../utils/polyline';
 
-interface TourMapScreenProps {
+interface MapPlayerScreenProps {
   tour: DownloadedTour;
   onBack: () => void;
 }
 
-const OMAN_CENTER = {
-  latitude: 23.5859,
-  longitude: 58.4059,
-  latitudeDelta: 0.5,
-  longitudeDelta: 0.5,
-};
+const PROGRESS_KEY = '@shufti_progress_';
 
-export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
+export function MapPlayerScreen({ tour, onBack }: MapPlayerScreenProps) {
   const mapRef = useRef<MapView>(null);
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+  const appStateRef = useRef(AppState.currentState);
 
   const [location, setLocation] = useState<LocationState | null>(null);
   const [tourStarted, setTourStarted] = useState(false);
   const [progress, setProgress] = useState<TourProgress>({
     tourId: tour.id,
     currentStopIndex: -1,
+    currentAudioPosition: 0,
     visitedStops: [],
     isPlaying: false,
     lastPlayedAt: '',
@@ -60,8 +61,14 @@ export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
 
   useEffect(() => {
     setupAudioMode();
+    loadSavedProgress();
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
     return () => {
+      saveProgress();
       unloadAudio();
+      subscription.remove();
       if (locationSubscription.current) {
         locationSubscription.current.remove();
       }
@@ -89,12 +96,51 @@ export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
     return () => setPlaybackStatusCallback(null);
   }, [currentStop]);
 
+  const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+    if (appStateRef.current.match(/active/) && nextAppState === 'background') {
+      await saveProgress();
+    }
+    appStateRef.current = nextAppState;
+  };
+
+  const loadSavedProgress = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(PROGRESS_KEY + tour.id);
+      if (saved) {
+        const savedProgress: TourProgress = JSON.parse(saved);
+        setProgress(savedProgress);
+        
+        if (savedProgress.currentStopIndex >= 0 && savedProgress.currentStopIndex < stops.length) {
+          const stop = stops[savedProgress.currentStopIndex];
+          setCurrentStop(stop);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading progress:', error);
+    }
+  };
+
+  const saveProgress = async () => {
+    try {
+      const position = await getPlaybackPosition();
+      const updatedProgress = {
+        ...progress,
+        currentAudioPosition: position,
+        lastPlayedAt: new Date().toISOString(),
+      };
+      await AsyncStorage.setItem(PROGRESS_KEY + tour.id, JSON.stringify(updatedProgress));
+    } catch (error) {
+      console.error('Error saving progress:', error);
+    }
+  };
+
   const handleAudioFinished = useCallback(() => {
     if (currentStop) {
-      setProgress((prev) => ({
+      setProgress(prev => ({
         ...prev,
         visitedStops: [...prev.visitedStops, currentStop.id],
         isPlaying: false,
+        currentAudioPosition: 0,
       }));
     }
   }, [currentStop]);
@@ -139,6 +185,24 @@ export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
     );
 
     setTourStarted(true);
+
+    if (progress.currentStopIndex >= 0 && currentStop && progress.currentAudioPosition > 0) {
+      await resumeFromSavedPosition();
+    }
+  };
+
+  const resumeFromSavedPosition = async () => {
+    if (!currentStop?.narration) return;
+    
+    const assetInfo = tour.assets[currentStop.narration];
+    if (!assetInfo) return;
+
+    try {
+      await loadAudio(tour.id, assetInfo.hash, tour.baseUrl, tour.isOffline);
+      await seekAudio(progress.currentAudioPosition);
+    } catch (error) {
+      console.error('Error resuming audio:', error);
+    }
   };
 
   const checkGeofences = useCallback(
@@ -157,6 +221,13 @@ export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
 
   const triggerStop = async (stop: StopModel) => {
     setCurrentStop(stop);
+    const stopIndex = stops.findIndex(s => s.id === stop.id);
+    
+    setProgress(prev => ({
+      ...prev,
+      currentStopIndex: stopIndex,
+      currentAudioPosition: 0,
+    }));
 
     if (stop.narration) {
       const assetInfo = tour.assets[stop.narration];
@@ -164,7 +235,7 @@ export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
         try {
           await loadAudio(tour.id, assetInfo.hash, tour.baseUrl, tour.isOffline);
           await playAudio();
-          setProgress((prev) => ({
+          setProgress(prev => ({
             ...prev,
             isPlaying: true,
             lastPlayedAt: new Date().toISOString(),
@@ -179,8 +250,25 @@ export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
   const handlePlayPause = async () => {
     if (audioState?.isPlaying) {
       await pauseAudio();
+      await saveProgress();
+      setProgress(prev => ({ ...prev, isPlaying: false }));
     } else {
       await playAudio();
+      setProgress(prev => ({ ...prev, isPlaying: true }));
+    }
+  };
+
+  const handlePrevStop = () => {
+    const currentIndex = stops.findIndex(s => s.id === currentStop?.id);
+    if (currentIndex > 0) {
+      triggerStop(stops[currentIndex - 1]);
+    }
+  };
+
+  const handleNextStop = () => {
+    const currentIndex = stops.findIndex(s => s.id === currentStop?.id);
+    if (currentIndex < stops.length - 1) {
+      triggerStop(stops[currentIndex + 1]);
     }
   };
 
@@ -193,6 +281,11 @@ export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
     });
   };
 
+  const handleBack = async () => {
+    await saveProgress();
+    onBack();
+  };
+
   const getInitialRegion = (): Region => {
     if (stops.length > 0) {
       const firstStop = stops[0];
@@ -203,7 +296,19 @@ export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
         longitudeDelta: 0.02,
       };
     }
-    return OMAN_CENTER;
+    return {
+      latitude: 23.5859,
+      longitude: 58.4059,
+      latitudeDelta: 0.5,
+      longitudeDelta: 0.5,
+    };
+  };
+
+  const formatTime = (millis: number): string => {
+    const totalSeconds = Math.floor(millis / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -220,7 +325,7 @@ export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
         {routePath.length > 0 && (
           <Polyline
             coordinates={routePath}
-            strokeColor="#007AFF"
+            strokeColor="#7cb342"
             strokeWidth={4}
           />
         )}
@@ -235,56 +340,89 @@ export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
               title={stop.title}
               description={stop.desc}
               onPress={() => handleStopPress(stop)}
-              pinColor={isCurrent ? '#007AFF' : isVisited ? '#4CAF50' : '#FF5722'}
+              pinColor={isCurrent ? '#7cb342' : isVisited ? '#888888' : '#ff7043'}
             />
           );
         })}
       </MapView>
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>Back</Text>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <Text style={styles.backButtonText}>Exit</Text>
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.tourTitle} numberOfLines={1}>
             {tour.title}
           </Text>
           <Text style={styles.tourProgress}>
-            {progress.visitedStops.length} / {stops.length} stops
+            {progress.visitedStops.length} / {stops.length} stops completed
           </Text>
         </View>
       </View>
 
       {!tourStarted ? (
         <TouchableOpacity style={styles.startButton} onPress={startTour}>
-          <Text style={styles.startButtonText}>Start Tour</Text>
+          <Text style={styles.startButtonText}>
+            {progress.currentStopIndex >= 0 ? 'Resume Tour' : 'Start Tour'}
+          </Text>
         </TouchableOpacity>
       ) : currentStop ? (
-        <View style={styles.nowPlaying}>
+        <View style={styles.playerControls}>
           <View style={styles.nowPlayingInfo}>
+            <Text style={styles.nowPlayingLabel}>Now Playing</Text>
             <Text style={styles.nowPlayingTitle}>{currentStop.title}</Text>
-            <Text style={styles.nowPlayingDesc} numberOfLines={2}>
-              {currentStop.desc}
-            </Text>
+            {audioState?.isLoaded && (
+              <View style={styles.progressRow}>
+                <Text style={styles.timeText}>
+                  {formatTime(audioState.positionMillis)}
+                </Text>
+                <View style={styles.seekBar}>
+                  <View
+                    style={[
+                      styles.seekProgress,
+                      {
+                        width: `${
+                          audioState.durationMillis > 0
+                            ? (audioState.positionMillis / audioState.durationMillis) * 100
+                            : 0
+                        }%`,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.timeText}>
+                  {formatTime(audioState.durationMillis)}
+                </Text>
+              </View>
+            )}
           </View>
-          <TouchableOpacity style={styles.playButton} onPress={handlePlayPause}>
-            <Text style={styles.playButtonText}>
-              {audioState?.isPlaying ? 'Pause' : 'Play'}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.controlsRow}>
+            <TouchableOpacity style={styles.skipButton} onPress={handlePrevStop}>
+              <Text style={styles.skipButtonText}>Prev</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.playPauseButton} onPress={handlePlayPause}>
+              <Text style={styles.playPauseText}>
+                {audioState?.isPlaying ? 'Pause' : 'Play'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.skipButton} onPress={handleNextStop}>
+              <Text style={styles.skipButtonText}>Next</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
         <View style={styles.walkingPrompt}>
           <Text style={styles.walkingText}>
-            Walk towards the next stop to hear the audio
+            Walk towards the highlighted pin to hear the audio
           </Text>
         </View>
       )}
 
       <View style={styles.stopList}>
-        <Text style={styles.stopListTitle}>Stops</Text>
-        {stops.slice(0, 5).map((stop, index) => {
+        <Text style={styles.stopListTitle}>Upcoming Stops</Text>
+        {stops.slice(0, 4).map((stop, index) => {
           const isVisited = progress.visitedStops.includes(stop.id);
+          const isCurrent = currentStop?.id === stop.id;
           return (
             <TouchableOpacity
               key={stop.id}
@@ -295,11 +433,15 @@ export function TourMapScreen({ tour, onBack }: TourMapScreenProps) {
                 style={[
                   styles.stopNumber,
                   isVisited && styles.stopNumberVisited,
+                  isCurrent && styles.stopNumberCurrent,
                 ]}
               >
                 <Text style={styles.stopNumberText}>{index + 1}</Text>
               </View>
-              <Text style={styles.stopName} numberOfLines={1}>
+              <Text
+                style={[styles.stopName, isVisited && styles.stopNameVisited]}
+                numberOfLines={1}
+              >
                 {stop.title}
               </Text>
             </TouchableOpacity>
@@ -334,11 +476,16 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   backButton: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
     marginRight: 12,
   },
   backButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
+    color: '#666666',
+    fontSize: 14,
+    fontWeight: '500',
   },
   headerInfo: {
     flex: 1,
@@ -346,19 +493,19 @@ const styles = StyleSheet.create({
   tourTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: '#1a1a1a',
   },
   tourProgress: {
     fontSize: 12,
-    color: '#666',
+    color: '#888888',
   },
   startButton: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 140,
     left: 20,
     right: 20,
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
+    backgroundColor: '#7cb342',
+    paddingVertical: 18,
     borderRadius: 12,
     alignItems: 'center',
     shadowColor: '#000',
@@ -368,58 +515,97 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   startButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 18,
     fontWeight: '600',
   },
-  nowPlaying: {
+  playerControls: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 140,
     left: 16,
     right: 16,
-    backgroundColor: '#1a1a2e',
-    borderRadius: 12,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   nowPlayingInfo: {
-    flex: 1,
-    marginRight: 12,
+    marginBottom: 12,
+  },
+  nowPlayingLabel: {
+    fontSize: 11,
+    color: '#7cb342',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   nowPlayingTitle: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-  },
-  nowPlayingDesc: {
-    color: '#aaa',
-    fontSize: 12,
+    color: '#ffffff',
     marginTop: 4,
   },
-  playButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
   },
-  playButtonText: {
-    color: '#fff',
+  timeText: {
+    fontSize: 12,
+    color: '#888888',
+    width: 40,
+  },
+  seekBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#333333',
+    borderRadius: 2,
+    marginHorizontal: 8,
+    overflow: 'hidden',
+  },
+  seekProgress: {
+    height: '100%',
+    backgroundColor: '#7cb342',
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  skipButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  skipButtonText: {
+    color: '#888888',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  playPauseButton: {
+    backgroundColor: '#7cb342',
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 24,
+  },
+  playPauseText: {
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: '600',
   },
   walkingPrompt: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 140,
     left: 16,
     right: 16,
     backgroundColor: 'rgba(255,255,255,0.95)',
     borderRadius: 12,
-    padding: 16,
+    padding: 20,
     alignItems: 'center',
   },
   walkingText: {
-    color: '#666',
-    fontSize: 14,
+    color: '#666666',
+    fontSize: 15,
+    textAlign: 'center',
   },
   stopList: {
     position: 'absolute',
@@ -433,8 +619,10 @@ const styles = StyleSheet.create({
   stopListTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
+    color: '#888888',
     marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   stopItem: {
     flexDirection: 'row',
@@ -445,22 +633,28 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#FF5722',
+    backgroundColor: '#ff7043',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: 10,
   },
   stopNumberVisited: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#cccccc',
+  },
+  stopNumberCurrent: {
+    backgroundColor: '#7cb342',
   },
   stopNumberText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 12,
     fontWeight: '600',
   },
   stopName: {
     flex: 1,
     fontSize: 14,
-    color: '#333',
+    color: '#333333',
+  },
+  stopNameVisited: {
+    color: '#888888',
   },
 });
